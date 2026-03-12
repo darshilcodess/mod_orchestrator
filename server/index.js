@@ -24,7 +24,7 @@ const projects = {
     name: 'Ticketing System',
     path: {
       win32: 'c:\\antino_mod\\mod_ticketing\\mod_ticketing_offline',
-      linux: '/home/user/antino_mod/mod_ticketing/mod_ticketing_offline'
+      linux: '/home/user/Antino/mod_ticketing/mod_ticketing_offline'
     },
     backend: {
       path: 'server',
@@ -52,7 +52,7 @@ const projects = {
     name: 'Zoho RAG',
     path: {
       win32: 'c:\\antino_mod\\mod_zoho_rag\\zoho_rag',
-      linux: '/home/user/antino_mod/mod_zoho_rag/zoho_rag'
+      linux: '/home/user/Antino/mod_zoho/zoho_rag'
     },
     backend: {
       path: 'zoho-analytics-rag',
