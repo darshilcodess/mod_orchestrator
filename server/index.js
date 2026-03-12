@@ -16,86 +16,48 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions));
+ 
+// Parse JSON and urlencoded bodies so req.body is populated
 app.use(bodyParser.json());
-
-// Project configurations with OS variations
+app.use(bodyParser.urlencoded({ extended: true }));
+// Project configurations
 const projects = {
   'mod_ticketing': {
     name: 'Ticketing System',
-    path: {
-      win32: 'c:\\antino_mod\\mod_ticketing\\mod_ticketing_offline',
-      linux: '/home/user/Antino/mod_ticketing/mod_ticketing_offline'
-    },
+    path: 'c:\\antino_mod\\mod_ticketing\\mod_ticketing_offline',
     backend: {
       path: 'server',
-      win32_command: 'call venv\\Scripts\\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
-      linux_command: 'source venv/bin/activate && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
-      port: 8000,
-      readyPatterns: [
-        { pattern: 'Started server process', progress: 30 },
-        { pattern: 'Waiting for application startup', progress: 60 },
-        { pattern: 'Application startup complete', progress: 100 }
-      ]
+      command: 'call venv\\Scripts\\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
+      port: 8000
     },
     frontend: {
       path: 'client',
-      win32_command: 'npm run dev -- --port 5175',
-      linux_command: 'npm run dev -- --port 5175',
-      port: 5175,
-      readyPatterns: [
-        { pattern: 'vite', progress: 40 },
-        { pattern: 'ready in', progress: 100 }
-      ]
+      command: 'npm run dev -- --port 5175',
+      port: 5175
     }
   },
   'mod_zoho_rag': {
     name: 'Zoho RAG',
-    path: {
-      win32: 'c:\\antino_mod\\mod_zoho_rag\\zoho_rag',
-      linux: '/home/user/Antino/mod_zoho/zoho_rag'
-    },
+    path: 'c:\\antino_mod\\mod_zoho_rag\\zoho_rag',
     backend: {
       path: 'zoho-analytics-rag',
-      win32_command: 'call venv\\Scripts\\activate.bat && set API_PORT=8001 && python main.py',
-      linux_command: 'source venv/bin/activate && export API_PORT=8001 && python main.py',
-      port: 8001,
-      readyPatterns: [
-        { pattern: 'Initialized session database', progress: 10 },
-        { pattern: 'Initializing RAG system', progress: 20 },
-        { pattern: 'Initializing vector store', progress: 30 },
-        { pattern: 'Loading embedding model', progress: 45 },
-        { pattern: 'Embedding model loaded', progress: 70 },
-        { pattern: 'Vector store now contains', progress: 90 },
-        { pattern: 'Application startup complete', progress: 100 }
-      ]
+      command: 'call venv\\Scripts\\activate.bat && set API_PORT=8001 && python main.py',
+      port: 8001
     },
     frontend: {
       path: 'zoho-react',
-      win32_command: 'npm run dev -- --port 5176',
-      linux_command: 'npm run dev -- --port 5176',
-      port: 5176,
-      readyPatterns: [
-        { pattern: 'vite', progress: 40 },
-        { pattern: 'ready in', progress: 100 }
-      ]
+      command: 'npm run dev -- --port 5176',
+      port: 5176
     }
   }
 };
-
+ 
 const processes = {};
-const startupProgress = {};
-
+ 
 // Helper to check if a port is in use
-const checkPort = (port, osType = process.platform) => {
+const checkPort = (port) => {
   return new Promise((resolve) => {
-    let cmd = '';
-    if (osType === 'win32') {
-      cmd = `netstat -ano | findstr :${port} | findstr LISTENING`;
-    } else {
-      cmd = `lsof -i :${port} -sTCP:LISTEN -t`;
-    }
-
-    exec(cmd, (err, stdout) => {
+    exec(`netstat -ano | findstr :${port} | findstr LISTENING`, (err, stdout) => {
       if (err || !stdout) {
         resolve(false);
       } else {
@@ -104,42 +66,31 @@ const checkPort = (port, osType = process.platform) => {
     });
   });
 };
-
+ 
 app.get('/projects', async (req, res) => {
-  const { os = process.platform } = req.query;
   const projectsWithStatus = await Promise.all(
     Object.keys(projects).map(async (key) => {
       const p = projects[key];
-      const backendRunning = await checkPort(p.backend.port, os);
-      const frontendRunning = await checkPort(p.frontend.port, os);
-      const projectPath = p.path[os] || p.path['win32'];
-
-      // If port is running, clear progress if not already done
-      if (backendRunning) delete startupProgress[`${key}-backend`];
-      if (frontendRunning) delete startupProgress[`${key}-frontend`];
-
+      const backendRunning = await checkPort(p.backend.port);
+      const frontendRunning = await checkPort(p.frontend.port);
       return {
         id: key,
-        name: p.name,
-        path: projectPath,
-        backend: { 
-          ...p.backend, 
-          running: backendRunning,
-          progress: startupProgress[`${key}-backend`] || (backendRunning ? 100 : 0)
-        },
-        frontend: { 
-          ...p.frontend, 
-          running: frontendRunning,
-          progress: startupProgress[`${key}-frontend`] || (frontendRunning ? 100 : 0)
-        }
+        ...p,
+        backend: { ...p.backend, running: backendRunning },
+        frontend: { ...p.frontend, running: frontendRunning }
       };
     })
   );
   res.json(projectsWithStatus);
 });
-
+ 
 app.post('/start', (req, res) => {
-  const { projectId, type, os = process.platform } = req.body;
+  const { projectId, type } = req.body || {};
+ 
+  if (!projectId || !type) {
+    return res.status(400).json({ error: 'projectId and type are required in the request body' });
+  }
+ 
   const project = projects[projectId];
   if (!project) return res.status(404).send('Project not found');
 
