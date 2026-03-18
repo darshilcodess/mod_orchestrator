@@ -10,8 +10,7 @@ const port = 3005;
 const corsOptions = {
   origin: [
     "http://localhost:3001",
-    "http://localhost:5175",
-    "http://localhost:5176",
+    "http://127.0.0.1:3001",
   ]
 }
 
@@ -22,37 +21,76 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 // Project configurations
 const projects = {
-  'mod_ticketing': {
-    name: 'Ticketing System',
-    path: 'c:\\antino_mod\\mod_ticketing\\mod_ticketing_offline',
+  ocr: {
+    name: 'OCR',
+    path: 'C:\\MOD_DEMO\\Mod_OCR',
     backend: {
-      path: 'server',
-      command: 'call venv\\Scripts\\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
-      port: 8000
+      // Project root contains `ocr_system/` and `venv/`
+      path: '.',
+      command: 'call venv\\Scripts\\activate.bat && python -m ocr_system.app.main',
+      port: 8005,
+      docsPath: '/docs',
+      docsLabel: 'Docs',
     },
     frontend: {
-      path: 'client',
-      command: 'npm run dev -- --port 5175',
-      port: 5175
-    }
+      path: 'frontend',
+      command: 'npm run dev',
+      port: 5173,
+    },
   },
-  'mod_zoho_rag': {
-    name: 'Zoho RAG',
-    path: 'c:\\antino_mod\\mod_zoho_rag\\zoho_rag',
+  rag: {
+    name: 'RAG',
+    path: 'C:\\MOD_DEMO\\zoho_rag',
     backend: {
       path: 'zoho-analytics-rag',
-      command: 'call venv\\Scripts\\activate.bat && set API_PORT=8001 && python main.py',
-      port: 8001
+      command: 'call venv\\Scripts\\activate.bat && uvicorn main:app --host 0.0.0.0 --port 8010 --reload',
+      port: 8010,
+      docsPath: '/docs',
+      docsLabel: 'Docs',
     },
     frontend: {
       path: 'zoho-react',
-      command: 'npm run dev -- --port 5176',
-      port: 5176
-    }
-  }
+      command: 'npm run dev -- --port 5175',
+      port: 5175,
+    },
+  },
+  ticketing: {
+    name: 'Ticketing System',
+    path: 'C:\\MOD_DEMO\\mod_ticketing_offline',
+    backend: {
+      path: 'server',
+      command: 'call venv\\Scripts\\activate.bat && alembic upgrade head && python -m app.utils.seed && uvicorn app.main:app --reload --port 8015',
+      port: 8015,
+      docsPath: '/docs',
+      docsLabel: 'Docs',
+    },
+    frontend: {
+      path: 'client',
+      command: 'npm run dev -- --port 5177',
+      port: 5177,
+    },
+  },
+  nl2sql: {
+    name: 'NL2SQL',
+    path: 'C:\\MOD_DEMO\\DGIS_Pipeline-main',
+    backend: {
+      path: 'nl2sql_project',
+      // venv is one level up from `nl2sql_project/`
+      command: 'call ..\\venv\\Scripts\\activate.bat && python api.py',
+      port: 8020,
+      docsPath: '/api/health',
+      docsLabel: 'Health',
+    },
+    frontend: {
+      path: 'nl2sql_project',
+      command: 'call ..\\venv\\Scripts\\activate.bat && python frontend_server.py',
+      port: 5179,
+    },
+  },
 };
  
 const processes = {};
+const startupProgress = {};
  
 // Helper to check if a port is in use
 const checkPort = (port) => {
@@ -73,11 +111,16 @@ app.get('/projects', async (req, res) => {
       const p = projects[key];
       const backendRunning = await checkPort(p.backend.port);
       const frontendRunning = await checkPort(p.frontend.port);
+
+      const backendProcessId = `${key}-backend`;
+      const frontendProcessId = `${key}-frontend`;
+      const backendProgress = startupProgress[backendProcessId] || 0;
+      const frontendProgress = startupProgress[frontendProcessId] || 0;
       return {
         id: key,
         ...p,
-        backend: { ...p.backend, running: backendRunning },
-        frontend: { ...p.frontend, running: frontendRunning }
+        backend: { ...p.backend, running: backendRunning, progress: backendRunning ? 100 : backendProgress },
+        frontend: { ...p.frontend, running: frontendRunning, progress: frontendRunning ? 100 : frontendProgress }
       };
     })
   );
@@ -95,11 +138,11 @@ app.post('/start', (req, res) => {
   if (!project) return res.status(404).send('Project not found');
 
   const config = project[type];
-  const projectPath = project.path[os] || project.path['win32'];
-  const fullPath = path.join(projectPath, config.path);
-  const command = os === 'win32' ? config.win32_command : config.linux_command;
+  if (!config) return res.status(404).send('Project type not found');
 
-  console.log(`Starting ${type} for ${projectId} on ${os} in ${fullPath}`);
+  const fullPath = path.join(project.path, config.path);
+  const command = config.command;
+  console.log(`Starting ${type} for ${projectId} in ${fullPath}`);
 
   const processId = `${projectId}-${type}`;
   startupProgress[processId] = 5; // Initial signal that it's starting
@@ -121,7 +164,7 @@ app.post('/start', (req, res) => {
           startupProgress[processId] = Math.max(startupProgress[processId] || 0, rp.progress);
         }
       });
-    }
+    }    
   });
 
   child.stderr.on('data', (data) => {

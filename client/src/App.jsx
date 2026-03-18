@@ -46,6 +46,8 @@ function App() {
   };
 
   const startBoth = (projectId) => {
+    // Avoid port collisions by starting only what's not running.
+    // (This is called by the "Start Project" button.)
     startProcess(projectId, 'backend');
     startProcess(projectId, 'frontend');
   };
@@ -70,19 +72,19 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen w-screen p-8 bg-slate-950 text-slate-100 font-sans overflow-x-hidden">
+    <div className="min-h-screen w-screen p-8 bg-gradient-to-br from-[#ff8c2d] via-white to-[#4caf50] text-slate-900 font-sans overflow-x-hidden">
       <ToastContainer theme="dark" position="bottom-right" />
-      <header className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6">
+      <header className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-[#ff8c2d] via-white to-[#4caf50] p-6 rounded-2xl shadow-xl border border-white/20 backdrop-blur-sm">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">
             Orchestrator
           </h1>
-          <p className="text-slate-400 mt-2">Manage your development ecosystem from one place.</p>
+          <p className="text-slate-700 font-medium mt-1">Manage your development ecosystem.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
           {/* OS Selector */}
-          <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
+          <div className="flex bg-white/20 p-1 rounded-xl border border-white/30 backdrop-blur-md">
             <button 
               onClick={() => handleOsChange('win32')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${os === 'win32' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white'}`}
@@ -97,7 +99,7 @@ function App() {
             </button>
           </div>
 
-          <button onClick={fetchProjects} className="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition text-slate-400 hover:text-white">
+          <button onClick={fetchProjects} className="p-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl transition text-slate-700 hover:text-slate-900 shadow-md">
             <RefreshCw className="w-5 h-5" />
           </button>
   
@@ -111,12 +113,12 @@ function App() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {projects.map((project) => (
-            <div key={project.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl hover:border-slate-700 transition-all">
-              <div className="p-6 border-b border-slate-800 bg-slate-900/50">
+            <div key={project.id} className="bg-white/70 border border-white/40 rounded-2xl overflow-hidden shadow-2xl hover:border-white/60 transition-all backdrop-blur-md">
+              <div className="p-6 border-b border-white/20 bg-white/40">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl font-bold text-white truncate">{project.name}</h2>
-                    <p className="text-sm text-slate-400 truncate mt-1">{project.path}</p>
+                    <h2 className="text-2xl font-bold text-slate-900 truncate">{project.name}</h2>
+                    <p className="text-sm text-slate-600 truncate mt-1">{project.path}</p>
                   </div>
                   
                   {project.backend.running && project.frontend.running ? (
@@ -129,7 +131,12 @@ function App() {
                   ) : (
                     <button 
                       onClick={() => startBoth(project.id)}
-                      disabled={(project.backend.progress > 0 && project.backend.progress < 100) || (project.frontend.progress > 0 && project.frontend.progress < 100)}
+                      disabled={
+                        project.backend.running ||
+                        project.frontend.running ||
+                        (project.backend.progress > 0 && project.backend.progress < 100) ||
+                        (project.frontend.progress > 0 && project.frontend.progress < 100)
+                      }
                       className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${((project.backend.progress > 0 && project.backend.progress < 100) || (project.frontend.progress > 0 && project.frontend.progress < 100)) ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40 active:scale-95'}`}
                     >
                       <Rocket className="w-5 h-5" /> {((project.backend.progress > 0 && project.backend.progress < 100) || (project.frontend.progress > 0 && project.frontend.progress < 100)) ? 'Starting...' : 'Start Project'}
@@ -144,10 +151,10 @@ function App() {
 
               <div className="p-6 space-y-6">
                 {/* Backend Section */}
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                <div className="bg-white/50 p-4 rounded-xl border border-white/40">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold uppercase tracking-wider text-slate-400">Backend</span>
+                      <span className="text-sm font-semibold uppercase tracking-wider text-slate-600">Backend</span>
                       <span className={`w-3 h-3 rounded-full ${project.backend.running ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]'}`}></span>
                     </div>
                     <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">Port {project.backend.port}</span>
@@ -156,23 +163,23 @@ function App() {
                     <button 
                       onClick={() => startProcess(project.id, 'backend')}
                       disabled={project.backend.running || (project.backend.progress > 0 && project.backend.progress < 100)}
-                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${project.backend.running || (project.backend.progress > 0 && project.backend.progress < 100) ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${project.backend.running || (project.backend.progress > 0 && project.backend.progress < 100) ? 'bg-black/10 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'}`}
                     >
                       <Play className="w-4 h-4" /> {(project.backend.progress > 0 && project.backend.progress < 100) ? 'Starting...' : 'Start'}
                     </button>
                     <button 
                       onClick={() => killPort(project.backend.port)}
                       disabled={!project.backend.running}
-                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium border transition-all ${!project.backend.running ? 'bg-slate-800/50 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border-rose-500/30'}`}
+                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium border transition-all ${!project.backend.running ? 'bg-black/5 border-black/10 text-slate-400 cursor-not-allowed' : 'bg-rose-600/20 hover:bg-rose-600 text-rose-600 hover:text-white border-rose-500/30'}`}
                     >
                       <Power className="w-4 h-4" /> Kill
                     </button>
                     <button 
-                      onClick={() => window.open(`http://localhost:${project.backend.port}/docs`, '_blank')}
+                      onClick={() => window.open(`http://localhost:${project.backend.port}${project.backend.docsPath || '/docs'}`, '_blank')}
                       disabled={!project.backend.running}
-                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium border transition-all ${!project.backend.running ? 'bg-slate-800/50 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border-blue-500/30'}`}
+                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium border transition-all ${!project.backend.running ? 'bg-black/5 border-black/10 text-slate-400 cursor-not-allowed' : 'bg-blue-600/20 hover:bg-blue-600 text-blue-600 hover:text-white border-blue-500/30'}`}
                     >
-                      <ExternalLink className="w-4 h-4" /> Docs
+                      <ExternalLink className="w-4 h-4" /> {project.backend.docsLabel || 'Docs'}
                     </button>
                   </div>
                   {project.backend.progress > 0 && project.backend.progress < 100 && (
@@ -186,10 +193,10 @@ function App() {
                 </div>
 
                 {/* Frontend Section */}
-                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                <div className="bg-white/50 p-4 rounded-xl border border-white/40">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold uppercase tracking-wider text-slate-400">Frontend</span>
+                      <span className="text-sm font-semibold uppercase tracking-wider text-slate-600">Frontend</span>
                       <span className={`w-3 h-3 rounded-full ${project.frontend.running ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]'}`}></span>
                     </div>
                     <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">Port {project.frontend.port}</span>
@@ -198,21 +205,21 @@ function App() {
                     <button 
                       onClick={() => startProcess(project.id, 'frontend')}
                       disabled={project.frontend.running || (project.frontend.progress > 0 && project.frontend.progress < 100)}
-                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${project.frontend.running || (project.frontend.progress > 0 && project.frontend.progress < 100) ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
+                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${project.frontend.running || (project.frontend.progress > 0 && project.frontend.progress < 100) ? 'bg-black/10 text-slate-500 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'}`}
                     >
                       <Play className="w-4 h-4" /> {(project.frontend.progress > 0 && project.frontend.progress < 100) ? 'Starting...' : 'Start'}
                     </button>
                     <button 
                       onClick={() => killPort(project.frontend.port)}
                       disabled={!project.frontend.running}
-                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium border transition-all ${!project.frontend.running ? 'bg-slate-800/50 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border-rose-500/30'}`}
+                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium border transition-all ${!project.frontend.running ? 'bg-black/5 border-black/10 text-slate-400 cursor-not-allowed' : 'bg-rose-600/20 hover:bg-rose-600 text-rose-600 hover:text-white border-rose-500/30'}`}
                     >
                       <Power className="w-4 h-4" /> Kill
                     </button>
                     <button 
                       onClick={() => window.open(`http://localhost:${project.frontend.port}`, '_blank')}
                       disabled={!project.frontend.running}
-                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium border transition-all ${!project.frontend.running ? 'bg-slate-800/50 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border-blue-500/30'}`}
+                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 font-medium border transition-all ${!project.frontend.running ? 'bg-black/5 border-black/10 text-slate-400 cursor-not-allowed' : 'bg-blue-600/20 hover:bg-blue-600 text-blue-600 hover:text-white border-blue-500/30'}`}
                     >
                       <ExternalLink className="w-4 h-4" /> View
                     </button>
