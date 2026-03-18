@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Play, Activity, Cpu, Power, RefreshCw, ExternalLink, Monitor, Terminal, Rocket } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import logo from './assets/logo 1.png';
 
 const API_URL = 'http://localhost:3005';
 
@@ -74,37 +75,52 @@ function App() {
   return (
     <div className="min-h-screen w-screen p-8 bg-gradient-to-br from-[#ff8c2d] via-white to-[#4caf50] text-slate-900 font-sans overflow-x-hidden">
       <ToastContainer theme="dark" position="bottom-right" />
-      <header className="mb-12 flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-[#ff8c2d] via-white to-[#4caf50] p-6 rounded-2xl shadow-xl border border-white/20 backdrop-blur-sm">
-        <div>
+      <header className="mb-6 grid grid-cols-3 items-center gap-6 bg-gradient-to-r from-[#ff8c2d] via-white to-[#4caf50] p-6 rounded-2xl shadow-xl border border-white/25 backdrop-blur-md">
+        <div className="flex justify-start">
+          <img
+            src={logo}
+            alt="Orchestrator logo"
+            className="w-16 h-16 object-contain flex-shrink-0"
+          />
+        </div>
+
+        <div className="flex flex-col items-center text-center">
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">
             Orchestrator
           </h1>
           <p className="text-slate-700 font-medium mt-1">Manage your development ecosystem.</p>
         </div>
-        
-        <div className="flex flex-wrap items-center gap-4">
-          {/* OS Selector */}
-          <div className="flex bg-white/20 p-1 rounded-xl border border-white/30 backdrop-blur-md">
-            <button 
-              onClick={() => handleOsChange('win32')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${os === 'win32' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white'}`}
-            >
-              <Monitor className="w-4 h-4" /> Windows
-            </button>
-            <button 
-              onClick={() => handleOsChange('linux')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${os === 'linux' ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white'}`}
-            >
-              <Terminal className="w-4 h-4" /> Linux
-            </button>
-          </div>
 
-          <button onClick={fetchProjects} className="p-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl transition text-slate-700 hover:text-slate-900 shadow-md">
-            <RefreshCw className="w-5 h-5" />
-          </button>
-  
+        <div className="flex justify-end">
+          <img
+            src={logo}
+            alt="Orchestrator logo"
+            className="w-14 h-14 object-contain flex-shrink-0"
+          />
         </div>
       </header>
+
+      <div className="mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-end items-end gap-4">
+        {/* OS Selector */}
+        <div className="flex bg-white/20 p-1 rounded-xl border border-white/30 backdrop-blur-md w-fit">
+          <button 
+            onClick={() => handleOsChange('win32')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${os === 'win32' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Monitor className="w-4 h-4" /> Windows
+          </button>
+          <button 
+            onClick={() => handleOsChange('linux')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${os === 'linux' ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/20' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Terminal className="w-4 h-4" /> Linux
+          </button>
+        </div>
+
+        <button onClick={fetchProjects} className="p-3 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl transition text-slate-700 hover:text-slate-900 shadow-md w-fit">
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </div>
 
       {loading && projects.length === 0 ? (
         <div className="flex justify-center py-20">

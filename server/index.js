@@ -191,7 +191,10 @@ app.post('/start', (req, res) => {
 });
 
 app.post('/kill-port', (req, res) => {
-  const { port, os = process.platform } = req.body;
+  const { port } = req.body;
+  // Always use the server's actual OS for kill commands.
+  // The UI's OS selector is just for display; it shouldn't break killing.
+  const os = process.platform;
   if (!port) return res.status(400).send('Port required');
 
   console.log(`Killing processes on port ${port} (${os})`);
